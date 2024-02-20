@@ -8,6 +8,7 @@ from django.utils import timezone
 from django.db.models import Sum
 from django.utils.decorators import method_decorator
 from django.contrib import messages
+from django.views.decorators.cache import never_cache
 
 def signin_required(fn):
     def wrapper(request,*args,**kwargs):
@@ -18,6 +19,7 @@ def signin_required(fn):
             return fn(request,*args,**kwargs)
     return wrapper
 
+decs=[signin_required,never_cache]
 class TransactionForm(forms.ModelForm):
     class Meta:
         model=Transactions
@@ -59,7 +61,7 @@ class LoginForm(forms.Form):
 
 # view for listing all transaction
 # url implemenet:local host:8000/transactions/all/
-@method_decorator(signin_required,name="dispatch")
+@method_decorator(decs,name="dispatch")
 class TransactionList(View):
     def get(self,request,*args,**kwargs):
         qs=Transactions.objects.filter(user_object=request.user)
@@ -103,7 +105,7 @@ class TransactionList(View):
 # views for creating new transaction
     # url:localhost/8000/transaction/add/
     # method:get,post
-@method_decorator(signin_required,name="dispatch")
+@method_decorator(decs,name="dispatch")
 
 class TransactionCreateView(View):
     def get(self,request,*args,**kwargs):
@@ -126,7 +128,7 @@ class TransactionCreateView(View):
 
 # url:localhost:8000/transaction/{id}/
         # method:get
-@method_decorator(signin_required,name="dispatch")
+@method_decorator(decs,name="dispatch")
 class TransactionDetailView(View):
     def get(self,request,*args,**kwargs):
         id=kwargs.get("pk")
@@ -136,7 +138,7 @@ class TransactionDetailView(View):
 # transaction Delete
 # url-localhost:8000/transactions/{id}/remove/
     # method get
-@method_decorator(signin_required,name="dispatch")
+@method_decorator(decs,name="dispatch")
 class TransactionDeleteView(View):
     def get(self,request,*args,**kwargs):
         id=kwargs.get("pk")
@@ -148,7 +150,7 @@ class TransactionDeleteView(View):
 # transaction edit
     # url-localhost:8000/transactions/{id}/update/
     # method:get,post
-method_decorator(signin_required,name="dispatch")
+method_decorator(decs,name="dispatch")
 class TransactionUpdate(View):
     def get(self,request,*args,**kwargs):
         id=kwargs.get("pk")
@@ -199,7 +201,7 @@ class SignUpView(View):
 class SignInView(View):
     def get(self,request,*args,**kwargs):
         form=LoginForm()
-        return render(request,"login.html",{"form":form})
+        return render(request,"signin.html",{"form":form})
     
     def post(self,request,*args,**kwargs):
         form=LoginForm(request.POST)
@@ -212,9 +214,9 @@ class SignInView(View):
                 login(request,user_object)
                 return redirect("transaction-list")
         print("invalid credentials")
-        return render(request,"login.html",{"form":form})
+        return render(request,"signin.html",{"form":form})
 
-@method_decorator(signin_required,name="dispatch")
+@method_decorator(decs,name="dispatch")
 class SignOutView(View):
     def get(self,request,*args,**kwargs):
         logout(request)
